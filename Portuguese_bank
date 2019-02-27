@@ -1,0 +1,42 @@
+import  pandas  as  pd
+from sklearn import preprocessing
+
+#Read the dataset
+data = pd.read_csv("C:/Users/Tejas/Desktop/bank-additional-full.csv", sep=';')
+y = data['y']
+y = y.replace(['yes','no'],(1,0))
+
+def encode_features(df_train):
+    features = ['job','marital','default','education','housing','loan','contact','month','poutcome']
+    for feature in features:
+        le = preprocessing.LabelEncoder()
+        le = le.fit(df_train[feature])
+        df_train[feature] = le.transform(df_train[feature])
+    return df_train
+
+data = encode_features(data)
+X = data.drop(['y'], axis = 1)
+from sklearn.model_selection import train_test_split
+X_train,X_test,y_train,y_test = train_test_split(X,y, test_size=0.2, random_state=43)
+
+#Use the RandomForestClassifier (We use Knn and logistic classifier also but Random forest have the best accuracy)
+from sklearn.ensemble import RandomForestClassifier
+ranfor = RandomForestClassifier(n_estimators=100,max_depth=10,random_state=13,criterion='gini')
+ranfor.fit(X_train,y_train)
+
+#accuracy of model
+from  sklearn.metrics import accuracy_score
+y_pred = ranfor.predict(X_test)
+accuracy_score(y_pred,y_test)
+importances=pd.Series(ranfor.feature_importances_, index=X.columns)
+importances.plot(kind='barh', figsize=(12,8))
+
+#real data prediction
+bank_random = pd.read_csv("C:/Users/Tejas/Desktop/bank-additional-full.csv", sep=';')
+y_random = bank_random['y']
+y_random = y_random.replace(['yes','no'],(1,0))
+X_random = bank_random.drop(['y'], axis = 1)
+X_random = encode_features(X_random)
+
+y_pred_ranfor = ranfor.predict(X_random)
+print('model accuracy compare to random choice',accuracy_score(y_pred_ranfor,y_random))
